@@ -4,6 +4,11 @@ set -e
 
 # INIT
 ########################################################################
+# Check broker.db
+if ! [ -d /home/aircok/aircok_edge_shell/shell ]; then
+    cd /home/aircok
+    sudo git clone https://github.com/aircok/aircok_edge_shell.git
+fi
 sudo chmod 755 /home/aircok/aircok_edge_shell/shell/*
 
 if command -v docker &> /dev/null; then
@@ -24,8 +29,12 @@ sudo rm -rf "/home/aircok/bundle"
 sudo rm -rf "/home/aircok/logs" 
 sudo rm -f "/home/aircok/broker.db" 
 # Initialize crontab
-sudo crontab -r
-sudo crontab -u aircok -r
+if sudo crontab -l &> /dev/null; then
+    sudo crontab -r
+fi
+if sudo crontab -u aircok -l &> /dev/null; then
+    sudo crontab -u aircok -r
+fi
 ########################################################################
 
 # Update system packages
@@ -65,8 +74,8 @@ flutter doctor
 curl -o /home/aircok/version.json https://v3.aircok.com/web/edge/update?sn=$(ifconfig eth0 | awk '/ether/ {gsub(/:/,"",$2); print $2}')
 
 # Add a cron job to request check update per 6 hours
-(crontab -l 2>/dev/null; echo "0 */6 * * * sudo curl -o /home/aircok/version.json https://v3.aircok.com/web/edge/update?sn=\$(ifconfig eth0 | awk '/ether/ {gsub(/:/,\"\",$2); print \$2}')") | crontab -
-(crontab -l 2>/dev/null; echo "0 2 * * * bash /home/aircok/aircok_edge_shell/shell/listener.sh") | crontab -
+(sudo crontab -l 2>/dev/null; echo "0 */6 * * * sudo curl -o /home/aircok/version.json https://v3.aircok.com/web/edge/update?sn=\$(ifconfig eth0 | awk '/ether/ {gsub(/:/,\"\",$2); print \$2}')") | sudo crontab -
+(sudo crontab -l 2>/dev/null; echo "0 2 * * * bash /home/aircok/aircok_edge_shell/shell/listener.sh") | sudo crontab -
 
 # Register start shell
 sudo sh -c 'echo "#!/bin/bash\n\n/home/aircok/start.sh\n/home/aircok/aircok_edge_shell/shell/server.sh\n\nexit 0" > /etc/rc.local'
